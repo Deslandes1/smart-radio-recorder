@@ -72,7 +72,9 @@ TEXTS = {
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – All Rights Reserved",
         "radio_url": "Internet Radio Stream URL", "radio_placeholder": "http://example.com/stream.mp3",
-        "play_radio": "▶️ Play", "pause_radio": "⏸️ Pause", "upload_audio": "Or upload audio file",
+        "use_proxy": "Use CORS proxy (if stream doesn't play)",
+        "proxy_info": "🔄 Using CORS proxy to bypass mixed content & CORS issues.",
+        "upload_audio": "Or upload audio file",
         "voice_rec_title": "🎤 Voice Recording", "video_rec_title": "📹 Video Recording",
         "start_recording": "Start", "stop_recording": "Stop", "analyze": "📊 Analyze",
         "download_report": "⬇️ Download Report", "no_recording": "No recording yet.",
@@ -89,7 +91,9 @@ TEXTS = {
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – Todos los derechos reservados",
         "radio_url": "URL de la emisora", "radio_placeholder": "http://ejemplo.com/stream.mp3",
-        "play_radio": "▶️ Reproducir", "pause_radio": "⏸️ Pausa", "upload_audio": "O sube archivo",
+        "use_proxy": "Usar proxy CORS (si la emisora no suena)",
+        "proxy_info": "🔄 Usando proxy CORS para evitar problemas de contenido mixto y CORS.",
+        "upload_audio": "O sube archivo",
         "voice_rec_title": "🎤 Grabación de Voz", "video_rec_title": "📹 Grabación de Vídeo",
         "start_recording": "Iniciar", "stop_recording": "Detener", "analyze": "📊 Analizar",
         "download_report": "⬇️ Descargar Informe", "no_recording": "Sin grabación.",
@@ -106,7 +110,9 @@ TEXTS = {
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – Tous droits réservés",
         "radio_url": "URL du flux", "radio_placeholder": "http://exemple.com/stream.mp3",
-        "play_radio": "▶️ Lire", "pause_radio": "⏸️ Pause", "upload_audio": "Ou téléchargez",
+        "use_proxy": "Utiliser un proxy CORS (si le flux ne joue pas)",
+        "proxy_info": "🔄 Utilisation d'un proxy CORS pour contourner les problèmes de contenu mixte et CORS.",
+        "upload_audio": "Ou téléchargez",
         "voice_rec_title": "🎤 Enregistrement vocal", "video_rec_title": "📹 Enregistrement vidéo",
         "start_recording": "Démarrer", "stop_recording": "Arrêter", "analyze": "📊 Analyser",
         "download_report": "⬇️ Télécharger", "no_recording": "Aucun enregistrement.",
@@ -123,7 +129,9 @@ TEXTS = {
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – Tout dwa rezève",
         "radio_url": "URL Kouran Radyo", "radio_placeholder": "http://egzanp.com/stream.mp3",
-        "play_radio": "▶️ Jwe", "pause_radio": "⏸️ Pran yon poz", "upload_audio": "Oswa telechaje fichye odyo",
+        "use_proxy": "Sèvi ak proxy CORS (si radyo pa jwe)",
+        "proxy_info": "🔄 Sèvi ak proxy CORS pou rezoud pwoblèm CORS ak kontni melanje.",
+        "upload_audio": "Oswa telechaje fichye odyo",
         "voice_rec_title": "🎤 Anrejistreman Vwa", "video_rec_title": "📹 Anrejistreman Videyo",
         "start_recording": "Kòmanse", "stop_recording": "Sispann", "analyze": "📊 Analize",
         "download_report": "⬇️ Telechaje Rapò", "no_recording": "Pa gen anrejistreman.",
@@ -214,21 +222,29 @@ st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 # ------------------------------
 tab1, tab2, tab3 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab")])
 
-# ========= TAB 1: RADIO with working HTML5 player =========
+# ========= TAB 1: RADIO with proxy fallback =========
 with tab1:
     col1, col2 = st.columns([3,1])
     with col1:
         radio_url = st.text_input(get_text("radio_url"), placeholder=get_text("radio_placeholder"))
+        use_proxy = st.checkbox(get_text("use_proxy"), value=True)
+        
         if radio_url:
-            # HTML5 audio element – works with most streaming URLs
+            # If proxy enabled and URL is HTTP, wrap it
+            if use_proxy and radio_url.startswith("http://"):
+                proxy_url = f"https://cors-anywhere.herokuapp.com/{radio_url}"
+                st.info(get_text("proxy_info"))
+            else:
+                proxy_url = radio_url
+            
             audio_html = f"""
             <audio controls autoplay style="width: 100%;">
-                <source src="{radio_url}" type="audio/mpeg">
+                <source src="{proxy_url}" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
             """
             st.components.v1.html(audio_html, height=100)
-            st.caption("ℹ️ If the stream doesn't play, try a direct MP3 URL or use a radio aggregator link that ends with .mp3/.ogg")
+            st.caption("ℹ️ If still not playing, try a direct MP3 link (e.g., from radio.garden or TuneIn).")
     with col2:
         st.markdown("### 🎧 Offline")
         uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])

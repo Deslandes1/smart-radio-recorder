@@ -25,6 +25,8 @@ if "converted_mp3_report" not in st.session_state:
     st.session_state.converted_mp3_report = None
 if "example_url" not in st.session_state:
     st.session_state.example_url = ""
+if "last_video_url" not in st.session_state:
+    st.session_state.last_video_url = ""  # store URL to show video player
 
 def show_haitian_flag():
     flag_path = "haiti_flag.png"
@@ -94,6 +96,7 @@ TEXTS = {
         "analyze_converted": "📊 Analyze this MP3 (generate report)",
         "no_converted": "No MP3 converted yet. Use the converter above.",
         "converted_player": "🎵 Converted MP3 Player",
+        "original_video": "🎬 Original Video Player",
         "analyze_btn": "Generate Report from this MP3",
         "my_audio": "🎧 Your uploaded and converted audio"
     },
@@ -120,6 +123,7 @@ TEXTS = {
         "analyze_converted": "📊 Analizar este MP3 (generar informe)",
         "no_converted": "No se ha convertido ningún MP3. Use el convertidor arriba.",
         "converted_player": "🎵 Reproductor de MP3 convertido",
+        "original_video": "🎬 Reproductor de video original",
         "analyze_btn": "Generar informe desde este MP3",
         "my_audio": "🎧 Tu audio subido y convertido"
     },
@@ -146,6 +150,7 @@ TEXTS = {
         "analyze_converted": "📊 Analyser ce MP3 (générer un rapport)",
         "no_converted": "Aucun MP3 converti. Utilisez le convertisseur ci-dessus.",
         "converted_player": "🎵 Lecteur MP3 converti",
+        "original_video": "🎬 Lecteur vidéo original",
         "analyze_btn": "Générer un rapport à partir de ce MP3",
         "my_audio": "🎧 Votre audio téléchargé et converti"
     },
@@ -172,6 +177,7 @@ TEXTS = {
         "analyze_converted": "📊 Analize MP3 sa a (kreye rapò)",
         "no_converted": "Pa gen MP3 konvèti. Sèvi ak konvètisè pi wo a.",
         "converted_player": "🎵 Lektè MP3 konvèti",
+        "original_video": "🎬 Lektè videyo orijinal",
         "analyze_btn": "Kreye rapò apati MP3 sa a",
         "my_audio": "🎧 Odyo ou telechaje ak konvèti"
     }
@@ -455,7 +461,7 @@ with tab3:
     else:
         st.info("No report yet. Record/convert and analyze first.")
 
-# ========= TAB 4: URL → MP3 CONVERTER =========
+# ========= TAB 4: URL → MP3 CONVERTER + ORIGINAL VIDEO PLAYER =========
 with tab4:
     st.markdown("## 🎬 Convert any URL (video, live stream, radio) to MP3")
     st.caption("Supports YouTube, Vimeo, Facebook, Twitter, TikTok, direct video URLs, live streams, icecast radio, etc.")
@@ -480,6 +486,7 @@ with tab4:
                 mp3_file = convert_url_to_mp3(video_url)
                 if mp3_file and os.path.exists(mp3_file):
                     st.session_state.converted_mp3_path = mp3_file
+                    st.session_state.last_video_url = video_url  # store for video player
                     st.success(get_text("conversion_success"))
                     st.audio(mp3_file)
                 else:
@@ -488,6 +495,7 @@ with tab4:
         else:
             st.warning("Please enter a URL.")
     
+    # Show converted MP3 if available
     if st.session_state.converted_mp3_path and os.path.exists(st.session_state.converted_mp3_path):
         st.markdown(f"### {get_text('converted_player')}")
         st.audio(st.session_state.converted_mp3_path)
@@ -497,5 +505,12 @@ with tab4:
                 st.session_state["converted_mp3_report"] = report
                 st.success(get_text("report_generated"))
                 st.text_area("Preview", report, height=200)
+        
+        # NEW: Play the original video if the URL is a video platform (YouTube, Vimeo, etc.)
+        if st.session_state.last_video_url:
+            st.markdown("---")
+            st.markdown(f"### {get_text('original_video')}")
+            # Use st.video which supports YouTube, Vimeo, and direct MP4 links
+            st.video(st.session_state.last_video_url)
     else:
         st.info(get_text("no_converted"))

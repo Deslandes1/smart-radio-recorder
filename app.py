@@ -4,6 +4,7 @@ import datetime
 import os
 import random
 from PIL import Image
+import yt_dlp
 
 # ------------------------------
 # PAGE CONFIG & LOGIN
@@ -18,6 +19,10 @@ if "voice_active" not in st.session_state:
     st.session_state.voice_active = False
 if "video_active" not in st.session_state:
     st.session_state.video_active = False
+if "converted_mp3_path" not in st.session_state:
+    st.session_state.converted_mp3_path = None
+if "converted_mp3_report" not in st.session_state:
+    st.session_state.converted_mp3_report = None
 
 def show_haitian_flag():
     flag_path = "haiti_flag.png"
@@ -66,79 +71,107 @@ LANGUAGES = {
 TEXTS = {
     "en": {
         "welcome": "Welcome to GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Live Radio", "record_tab": "🎙️ Record & Analyze", "report_tab": "📄 Download Report",
+        "radio_tab": "📡 My Audio", "record_tab": "🎙️ Record & Analyze", "report_tab": "📄 Download Report", "convert_tab": "🎬 URL → MP3",
         "language": "Language", "price_label": "💰 Price (One-time)", "price_value": "**$149 USD** (lifetime license)",
         "user_info": "👤 Founder & Developer", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – All Rights Reserved",
-        "radio_url": "Internet Radio Stream URL", "radio_placeholder": "http://example.com/stream.mp3",
-        "use_proxy": "Use CORS proxy (if stream doesn't play)",
-        "proxy_info": "🔄 Using CORS proxy to bypass mixed content & CORS issues.",
-        "upload_audio": "Or upload audio file",
+        "upload_audio": "Upload audio file (MP3, WAV, OGG)",
         "voice_rec_title": "🎤 Voice Recording", "video_rec_title": "📹 Video Recording",
         "start_recording": "Start", "stop_recording": "Stop", "analyze": "📊 Analyze",
         "download_report": "⬇️ Download Report", "no_recording": "No recording yet.",
         "report_generated": "Report generated!", "analysis_result": "Analysis Result (simulated)",
         "recording_info": "Recording Info", "duration_sec": "Duration (s)", "file_size_kb": "Size (KB)",
         "mock_analysis": "Speech clarity 85%, low noise, sentiment positive.",
-        "logout": "🚪 Logout", "demo_mode": "🎮 Demo Mode (no real recording)", "demo_active": "Demo mode active – using mock data."
+        "logout": "🚪 Logout", "demo_mode": "🎮 Demo Mode (no real recording)", "demo_active": "Demo mode active – using mock data.",
+        "video_url": "Any URL (video, live stream, radio stream, etc.)",
+        "convert_btn": "🔄 Download as MP3 & Use in App",
+        "converting": "Downloading and converting audio... please wait.",
+        "conversion_success": "Conversion successful! MP3 is now available below and in the 'My Audio' tab.",
+        "conversion_error": "Conversion failed. Check URL or try again.",
+        "analyze_converted": "📊 Analyze this MP3 (generate report)",
+        "no_converted": "No MP3 converted yet. Use the converter above.",
+        "converted_player": "🎵 Converted MP3 Player",
+        "analyze_btn": "Generate Report from this MP3",
+        "my_audio": "🎧 Your uploaded and converted audio"
     },
     "es": {
         "welcome": "Bienvenido a GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Radio en Vivo", "record_tab": "🎙️ Grabar y Analizar", "report_tab": "📄 Descargar Informe",
+        "radio_tab": "📡 Mi Audio", "record_tab": "🎙️ Grabar y Analizar", "report_tab": "📄 Descargar Informe", "convert_tab": "🎬 URL → MP3",
         "language": "Idioma", "price_label": "💰 Precio (único pago)", "price_value": "**149 USD** (licencia vitalicia)",
         "user_info": "👤 Fundador", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – Todos los derechos reservados",
-        "radio_url": "URL de la emisora", "radio_placeholder": "http://ejemplo.com/stream.mp3",
-        "use_proxy": "Usar proxy CORS (si la emisora no suena)",
-        "proxy_info": "🔄 Usando proxy CORS para evitar problemas de contenido mixto y CORS.",
-        "upload_audio": "O sube archivo",
+        "upload_audio": "Subir archivo de audio (MP3, WAV, OGG)",
         "voice_rec_title": "🎤 Grabación de Voz", "video_rec_title": "📹 Grabación de Vídeo",
         "start_recording": "Iniciar", "stop_recording": "Detener", "analyze": "📊 Analizar",
         "download_report": "⬇️ Descargar Informe", "no_recording": "Sin grabación.",
         "report_generated": "¡Informe generado!", "analysis_result": "Resultado (simulado)",
         "recording_info": "Información", "duration_sec": "Duración (s)", "file_size_kb": "Tamaño (KB)",
         "mock_analysis": "Claridad 85%, ruido bajo, sentimiento positivo.",
-        "logout": "🚪 Cerrar sesión", "demo_mode": "🎮 Modo Demo (sin grabación real)", "demo_active": "Modo demo activo – usando datos simulados."
+        "logout": "🚪 Cerrar sesión", "demo_mode": "🎮 Modo Demo (sin grabación real)", "demo_active": "Modo demo activo – usando datos simulados.",
+        "video_url": "Cualquier URL (video, transmisión en vivo, radio, etc.)",
+        "convert_btn": "🔄 Descargar como MP3 y usar en la App",
+        "converting": "Descargando y convirtiendo audio... espere.",
+        "conversion_success": "¡Conversión exitosa! El MP3 ya está disponible abajo y en la pestaña 'Mi Audio'.",
+        "conversion_error": "Error en la conversión. Verifique la URL o intente de nuevo.",
+        "analyze_converted": "📊 Analizar este MP3 (generar informe)",
+        "no_converted": "No se ha convertido ningún MP3. Use el convertidor arriba.",
+        "converted_player": "🎵 Reproductor de MP3 convertido",
+        "analyze_btn": "Generar informe desde este MP3",
+        "my_audio": "🎧 Tu audio subido y convertido"
     },
     "fr": {
         "welcome": "Bienvenue sur GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Radio en Direct", "record_tab": "🎙️ Enregistrer et Analyser", "report_tab": "📄 Télécharger Rapport",
+        "radio_tab": "📡 Mon Audio", "record_tab": "🎙️ Enregistrer et Analyser", "report_tab": "📄 Télécharger Rapport", "convert_tab": "🎬 URL → MP3",
         "language": "Langue", "price_label": "💰 Prix (unique)", "price_value": "**149 USD** (licence à vie)",
         "user_info": "👤 Fondateur", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – Tous droits réservés",
-        "radio_url": "URL du flux", "radio_placeholder": "http://exemple.com/stream.mp3",
-        "use_proxy": "Utiliser un proxy CORS (si le flux ne joue pas)",
-        "proxy_info": "🔄 Utilisation d'un proxy CORS pour contourner les problèmes de contenu mixte et CORS.",
-        "upload_audio": "Ou téléchargez",
+        "upload_audio": "Télécharger un fichier audio (MP3, WAV, OGG)",
         "voice_rec_title": "🎤 Enregistrement vocal", "video_rec_title": "📹 Enregistrement vidéo",
         "start_recording": "Démarrer", "stop_recording": "Arrêter", "analyze": "📊 Analyser",
         "download_report": "⬇️ Télécharger", "no_recording": "Aucun enregistrement.",
         "report_generated": "Rapport généré !", "analysis_result": "Résultat (simulé)",
         "recording_info": "Infos", "duration_sec": "Durée (s)", "file_size_kb": "Taille (Ko)",
         "mock_analysis": "Clarté 85%, bruit faible, sentiment positif.",
-        "logout": "🚪 Déconnexion", "demo_mode": "🎮 Mode Démo (pas d'enregistrement réel)", "demo_active": "Mode démo actif – données simulées."
+        "logout": "🚪 Déconnexion", "demo_mode": "🎮 Mode Démo (pas d'enregistrement réel)", "demo_active": "Mode démo actif – données simulées.",
+        "video_url": "N'importe quelle URL (vidéo, direct, radio, etc.)",
+        "convert_btn": "🔄 Télécharger en MP3 et utiliser dans l'app",
+        "converting": "Téléchargement et conversion audio... veuillez patienter.",
+        "conversion_success": "Conversion réussie ! Le MP3 est maintenant disponible ci-dessous et dans l'onglet 'Mon Audio'.",
+        "conversion_error": "Échec de la conversion. Vérifiez l'URL ou réessayez.",
+        "analyze_converted": "📊 Analyser ce MP3 (générer un rapport)",
+        "no_converted": "Aucun MP3 converti. Utilisez le convertisseur ci-dessus.",
+        "converted_player": "🎵 Lecteur MP3 converti",
+        "analyze_btn": "Générer un rapport à partir de ce MP3",
+        "my_audio": "🎧 Votre audio téléchargé et converti"
     },
     "ht": {
         "welcome": "Byenveni nan GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Radyo Live", "record_tab": "🎙️ Anrejistre ak Analize", "report_tab": "📄 Telechaje Rapò",
+        "radio_tab": "📡 Odyo Mwen", "record_tab": "🎙️ Anrejistre ak Analize", "report_tab": "📄 Telechaje Rapò", "convert_tab": "🎬 URL → MP3",
         "language": "Lang", "price_label": "💰 Pri (yon sèl fwa)", "price_value": "**149 USD** (lisans pou tout lavi)",
         "user_info": "👤 Fondatè ak Devlopè", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
         "license": "© 2025 GlobalInternet.py – Tout dwa rezève",
-        "radio_url": "URL Kouran Radyo", "radio_placeholder": "http://egzanp.com/stream.mp3",
-        "use_proxy": "Sèvi ak proxy CORS (si radyo pa jwe)",
-        "proxy_info": "🔄 Sèvi ak proxy CORS pou rezoud pwoblèm CORS ak kontni melanje.",
-        "upload_audio": "Oswa telechaje fichye odyo",
+        "upload_audio": "Telechaje fichye odyo (MP3, WAV, OGG)",
         "voice_rec_title": "🎤 Anrejistreman Vwa", "video_rec_title": "📹 Anrejistreman Videyo",
         "start_recording": "Kòmanse", "stop_recording": "Sispann", "analyze": "📊 Analize",
         "download_report": "⬇️ Telechaje Rapò", "no_recording": "Pa gen anrejistreman.",
         "report_generated": "Rapò kreye!", "analysis_result": "Rezilta Analiz (simile)",
         "recording_info": "Enfòmasyon Anrejistreman", "duration_sec": "Dire (s)", "file_size_kb": "Gwosè (KB)",
         "mock_analysis": "Klète vwa 85%, bri ba, santiman pozitif.",
-        "logout": "🚪 Dekonekte", "demo_mode": "🎮 Mòd Demo (pa gen anrejistreman reyèl)", "demo_active": "Mòd demo aktif – itilize done similes."
+        "logout": "🚪 Dekonekte", "demo_mode": "🎮 Mòd Demo (pa gen anrejistreman reyèl)", "demo_active": "Mòd demo aktif – itilize done similes.",
+        "video_url": "Nenpòt URL (videyo, live, radyo, elth)",
+        "convert_btn": "🔄 Telechaje kòm MP3 epi itilize nan App",
+        "converting": "Telechaje ak konvèti odyo... tanpri tann.",
+        "conversion_success": "Konvèsyon siksè! MP3 la disponib anba a ak nan tab 'Odyo Mwen'.",
+        "conversion_error": "Konvèsyon echwe. Tcheke URL la oswa eseye ankò.",
+        "analyze_converted": "📊 Analize MP3 sa a (kreye rapò)",
+        "no_converted": "Pa gen MP3 konvèti. Sèvi ak konvètisè pi wo a.",
+        "converted_player": "🎵 Lektè MP3 konvèti",
+        "analyze_btn": "Kreye rapò apati MP3 sa a",
+        "my_audio": "🎧 Odyo ou telechaje ak konvèti"
     }
 }
 
@@ -176,6 +209,34 @@ def save_report_file(report_text, prefix):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(report_text)
     return filename
+
+def convert_url_to_mp3(url):
+    """Download audio from any URL (video, live stream, radio) using yt-dlp."""
+    try:
+        # Create a safe output template
+        output_template = "converted_audio_%(title)s.%(ext)s"
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl': output_template,
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            # Find the produced mp3 file
+            mp3_files = [f for f in os.listdir('.') if f.startswith('converted_audio') and f.endswith('.mp3')]
+            if mp3_files:
+                newest = max(mp3_files, key=os.path.getctime)
+                return newest
+            return None
+    except Exception as e:
+        st.error(f"Conversion error: {str(e)}")
+        return None
 
 # ------------------------------
 # SIDEBAR
@@ -218,38 +279,22 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 
 # ------------------------------
-# MAIN TABS
+# MAIN TABS (4 tabs)
 # ------------------------------
-tab1, tab2, tab3 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab")])
+tab1, tab2, tab3, tab4 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab"), get_text("convert_tab")])
 
-# ========= TAB 1: RADIO with proxy fallback =========
+# ========= TAB 1: MY AUDIO (uploaded + converted MP3) =========
 with tab1:
-    col1, col2 = st.columns([3,1])
-    with col1:
-        radio_url = st.text_input(get_text("radio_url"), placeholder=get_text("radio_placeholder"))
-        use_proxy = st.checkbox(get_text("use_proxy"), value=True)
-        
-        if radio_url:
-            # If proxy enabled and URL is HTTP, wrap it
-            if use_proxy and radio_url.startswith("http://"):
-                proxy_url = f"https://cors-anywhere.herokuapp.com/{radio_url}"
-                st.info(get_text("proxy_info"))
-            else:
-                proxy_url = radio_url
-            
-            audio_html = f"""
-            <audio controls autoplay style="width: 100%;">
-                <source src="{proxy_url}" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
-            """
-            st.components.v1.html(audio_html, height=100)
-            st.caption("ℹ️ If still not playing, try a direct MP3 link (e.g., from radio.garden or TuneIn).")
-    with col2:
-        st.markdown("### 🎧 Offline")
-        uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])
-        if uploaded_file:
-            st.audio(uploaded_file)
+    st.markdown(f"### {get_text('my_audio')}")
+    # Upload audio
+    uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])
+    if uploaded_file:
+        st.audio(uploaded_file)
+    # Show converted MP3 if exists
+    if st.session_state.converted_mp3_path and os.path.exists(st.session_state.converted_mp3_path):
+        st.markdown("---")
+        st.markdown(f"### {get_text('converted_player')}")
+        st.audio(st.session_state.converted_mp3_path)
 
 # ========= TAB 2: RECORDING & ANALYSIS =========
 with tab2:
@@ -272,7 +317,6 @@ with tab2:
         with col_v2:
             if st.button(f"⏹️ {get_text('stop_recording')}", key="voice_stop"):
                 st.session_state.voice_active = False
-        
         if st.session_state.voice_active:
             st.info("🔴 Recording voice... Click 'Stop Recording' when done.")
             webrtc_streamer(
@@ -282,7 +326,6 @@ with tab2:
             )
         else:
             webrtc_streamer(key="voice_idle", desired_playing_state=False)
-        
         if os.path.exists(voice_file):
             st.audio(voice_file)
             if st.button(get_text("analyze"), key="analyze_voice"):
@@ -293,9 +336,7 @@ with tab2:
                     st.text_area("Preview", report, height=200)
         else:
             st.info(get_text("no_recording"))
-    
     st.divider()
-    
     # Video
     st.markdown(f"## {get_text('video_rec_title')}")
     if st.session_state.demo_mode:
@@ -315,7 +356,6 @@ with tab2:
         with col_vid2:
             if st.button(f"⏹️ {get_text('stop_recording')}", key="video_stop"):
                 st.session_state.video_active = False
-        
         if st.session_state.video_active:
             st.info("🔴 Recording video + audio... Click 'Stop Recording' when done.")
             webrtc_streamer(
@@ -325,7 +365,6 @@ with tab2:
             )
         else:
             webrtc_streamer(key="video_idle", desired_playing_state=False)
-        
         if os.path.exists(video_file):
             st.video(video_file)
             if st.button(get_text("analyze"), key="analyze_video"):
@@ -337,14 +376,16 @@ with tab2:
         else:
             st.info(get_text("no_recording"))
 
-# ========= TAB 3: REPORT DOWNLOAD =========
+# ========= TAB 3: DOWNLOAD REPORT =========
 with tab3:
     st.markdown("### 📥 Download Report")
-    report_choice = st.radio("Choose:", ["Voice Report", "Video Report"])
-    if "Voice" in report_choice:
+    report_choice = st.radio("Choose:", ["Voice Report", "Video Report", "Converted MP3 Report"])
+    if report_choice == "Voice Report":
         content = st.session_state.get("voice_report", "")
-    else:
+    elif report_choice == "Video Report":
         content = st.session_state.get("video_report", "")
+    else:
+        content = st.session_state.get("converted_mp3_report", "")
     if content:
         fname = save_report_file(content, report_choice.replace(" ", "_").lower())
         if fname:
@@ -352,4 +393,35 @@ with tab3:
                 st.download_button(get_text("download_report"), f.read(), file_name=fname, mime="text/plain")
             os.remove(fname)
     else:
-        st.info("No report yet. Record and analyze first.")
+        st.info("No report yet. Record/convert and analyze first.")
+
+# ========= TAB 4: URL → MP3 CONVERTER =========
+with tab4:
+    st.markdown("## 🎬 Convert any URL (video, live stream, radio) to MP3")
+    st.caption("Supports YouTube, Vimeo, Facebook, Twitter, TikTok, direct video URLs, live streams, icecast radio, etc.")
+    video_url = st.text_input(get_text("video_url"), placeholder="https://www.youtube.com/watch?v=... or http://radio.stream/live")
+    if st.button(get_text("convert_btn")):
+        if video_url:
+            with st.spinner(get_text("converting")):
+                mp3_file = convert_url_to_mp3(video_url)
+                if mp3_file and os.path.exists(mp3_file):
+                    st.session_state.converted_mp3_path = mp3_file
+                    st.success(get_text("conversion_success"))
+                    st.audio(mp3_file)
+                else:
+                    st.error(get_text("conversion_error"))
+        else:
+            st.warning("Please enter a URL.")
+    
+    # Display converted MP3 if available
+    if st.session_state.converted_mp3_path and os.path.exists(st.session_state.converted_mp3_path):
+        st.markdown(f"### {get_text('converted_player')}")
+        st.audio(st.session_state.converted_mp3_path)
+        if st.button(get_text("analyze_btn"), key="analyze_converted"):
+            report = generate_mock_report(st.session_state.converted_mp3_path, "Converted MP3 from URL")
+            if report:
+                st.session_state["converted_mp3_report"] = report
+                st.success(get_text("report_generated"))
+                st.text_area("Preview", report, height=200)
+    else:
+        st.info(get_text("no_converted"))

@@ -212,39 +212,93 @@ def save_report_file(report_text, prefix):
         f.write(report_text)
     return filename
 
-def convert_url_to_mp3(url):
-    """Download audio from any URL using yt-dlp with better headers."""
-    try:
-        output_template = "converted_audio_%(title)s.%(ext)s"
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': output_template,
-            'quiet': True,
-            'no_warnings': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'referer': url,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-us,en;q=0.5',
-                'Sec-Fetch-Mode': 'navigate',
-            }
+# ========= ENHANCED CONVERTER WITH MULTI-STRATEGY =========
+def find_converted_mp3():
+    mp3_files = [f for f in os.listdir('.') if f.startswith('converted_audio') and f.endswith('.mp3')]
+    if mp3_files:
+        return max(mp3_files, key=os.path.getctime)
+    return None
+
+def try_strategy_1(url):
+    """Default method with modern headers"""
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': 'converted_audio_%(title)s.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            mp3_files = [f for f in os.listdir('.') if f.startswith('converted_audio') and f.endswith('.mp3')]
-            if mp3_files:
-                newest = max(mp3_files, key=os.path.getctime)
-                return newest
-            return None
-    except Exception as e:
-        st.error(f"Conversion error: {str(e)}")
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.extract_info(url, download=True)
+    return find_converted_mp3()
+
+def try_strategy_2(url):
+    """Use cookies.txt file if available"""
+    if not os.path.exists('cookies.txt'):
         return None
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': 'converted_audio_%(title)s.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'cookiefile': 'cookies.txt',
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.extract_info(url, download=True)
+    return find_converted_mp3()
+
+def try_strategy_3(url):
+    """Alternative audio format (m4a)"""
+    ydl_opts = {
+        'format': 'bestaudio[ext=m4a]/bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'outtmpl': 'converted_audio_%(title)s.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.extract_info(url, download=True)
+    return find_converted_mp3()
+
+def convert_url_to_mp3(url):
+    """Multi‑strategy converter"""
+    strategies = [
+        ("Default method", try_strategy_1),
+        ("Using cookies.txt", try_strategy_2),
+        ("Alternative audio format (m4a)", try_strategy_3),
+    ]
+    for strategy_name, strategy_func in strategies:
+        try:
+            st.info(f"🔄 Trying: {strategy_name}...")
+            result = strategy_func(url)
+            if result:
+                st.success(f"✅ Success using {strategy_name}")
+                return result
+        except Exception as e:
+            st.warning(f"⚠️ {strategy_name} failed: {str(e)[:100]}")
+            continue
+    return None
 
 # ------------------------------
 # SIDEBAR
@@ -287,11 +341,11 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 
 # ------------------------------
-# MAIN TABS
+# MAIN TABS (4 tabs)
 # ------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab"), get_text("convert_tab")])
 
-# TAB 1: MY AUDIO
+# ========= TAB 1: MY AUDIO =========
 with tab1:
     st.markdown(f"### {get_text('my_audio')}")
     uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])
@@ -302,7 +356,7 @@ with tab1:
         st.markdown(f"### {get_text('converted_player')}")
         st.audio(st.session_state.converted_mp3_path)
 
-# TAB 2: RECORDING & ANALYSIS
+# ========= TAB 2: RECORDING & ANALYSIS =========
 with tab2:
     # Voice
     st.markdown(f"## {get_text('voice_rec_title')}")
@@ -382,7 +436,7 @@ with tab2:
         else:
             st.info(get_text("no_recording"))
 
-# TAB 3: DOWNLOAD REPORT
+# ========= TAB 3: DOWNLOAD REPORT =========
 with tab3:
     st.markdown("### 📥 Download Report")
     report_choice = st.radio("Choose:", ["Voice Report", "Video Report", "Converted MP3 Report"])
@@ -401,7 +455,7 @@ with tab3:
     else:
         st.info("No report yet. Record/convert and analyze first.")
 
-# TAB 4: URL → MP3 CONVERTER (with test URLs)
+# ========= TAB 4: URL → MP3 CONVERTER =========
 with tab4:
     st.markdown("## 🎬 Convert any URL (video, live stream, radio) to MP3")
     st.caption("Supports YouTube, Vimeo, Facebook, Twitter, TikTok, direct video URLs, live streams, icecast radio, etc.")

@@ -9,7 +9,7 @@ import yt_dlp
 # ------------------------------
 # PAGE CONFIG & LOGIN
 # ------------------------------
-st.set_page_config(page_title="GlobalInternet.py Radio", layout="wide")
+st.set_page_config(page_title="Smart Radio & Media Suite", layout="wide")
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -50,12 +50,13 @@ def show_haitian_flag():
 
 # Login page
 if not st.session_state.authenticated:
-    st.title("🔐 Login Required")
+    st.title("🔐 LOGIN REQUIRED")
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         show_haitian_flag()
-        st.markdown("## **GlobalInternet.py**")
-        password_input = st.text_input("Enter password to access the radio suite", type="password")
+        st.markdown("<h1 style='text-align: center;'>GlobalInternet.py</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>Smart Radio & Media Suite</h3>", unsafe_allow_html=True)
+        password_input = st.text_input("Enter password to access the suite", type="password")
         if st.button("Login"):
             if password_input == "20082010":
                 st.session_state.authenticated = True
@@ -63,6 +64,14 @@ if not st.session_state.authenticated:
             else:
                 st.error("Incorrect password. Access denied.")
     st.stop()
+
+# ------------------------------
+# AFTER LOGIN: MAIN APP HEADER
+# ------------------------------
+# Professional main title
+st.markdown("<h1 style='text-align: center; color: #00209F;'>SMART RADIO & MEDIA SUITE</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'>by GlobalInternet.py</h3>", unsafe_allow_html=True)
+st.markdown("---")
 
 # ------------------------------
 # MULTI-LANGUAGE (4 languages)
@@ -76,7 +85,7 @@ LANGUAGES = {
 
 TEXTS = {
     "en": {
-        "welcome": "Welcome to GlobalInternet.py Radio Suite",
+        "welcome": "Welcome to Smart Radio & Media Suite",
         "radio_tab": "📡 My Audio", "record_tab": "🎙️ Record & Analyze", "report_tab": "📄 Download Report", "convert_tab": "🎬 URL → MP3 & MP4",
         "language": "Language", "price_label": "💰 Price (One-time)", "price_value": "**$149 USD** (lifetime license)",
         "user_info": "👤 Founder & Developer", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
@@ -105,7 +114,7 @@ TEXTS = {
         "my_audio": "🎧 Your uploaded and converted audio"
     },
     "es": {
-        "welcome": "Bienvenido a GlobalInternet.py Radio Suite",
+        "welcome": "Bienvenido a Smart Radio & Media Suite",
         "radio_tab": "📡 Mi Audio", "record_tab": "🎙️ Grabar y Analizar", "report_tab": "📄 Descargar Informe", "convert_tab": "🎬 URL → MP3 y MP4",
         "language": "Idioma", "price_label": "💰 Precio (único pago)", "price_value": "**149 USD** (licencia vitalicia)",
         "user_info": "👤 Fundador", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
@@ -134,7 +143,7 @@ TEXTS = {
         "my_audio": "🎧 Tu audio subido y convertido"
     },
     "fr": {
-        "welcome": "Bienvenue sur GlobalInternet.py Radio Suite",
+        "welcome": "Bienvenue sur Smart Radio & Media Suite",
         "radio_tab": "📡 Mon Audio", "record_tab": "🎙️ Enregistrer et Analyser", "report_tab": "📄 Télécharger Rapport", "convert_tab": "🎬 URL → MP3 & MP4",
         "language": "Langue", "price_label": "💰 Prix (unique)", "price_value": "**149 USD** (licence à vie)",
         "user_info": "👤 Fondateur", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
@@ -163,7 +172,7 @@ TEXTS = {
         "my_audio": "🎧 Votre audio téléchargé et converti"
     },
     "ht": {
-        "welcome": "Byenveni nan GlobalInternet.py Radio Suite",
+        "welcome": "Byenveni nan Smart Radio & Media Suite",
         "radio_tab": "📡 Odyo Mwen", "record_tab": "🎙️ Anrejistre ak Analize", "report_tab": "📄 Telechaje Rapò", "convert_tab": "🎬 URL → MP3 ak MP4",
         "language": "Lang", "price_label": "💰 Pri (yon sèl fwa)", "price_value": "**149 USD** (lisans pou tout lavi)",
         "user_info": "👤 Fondatè ak Devlopè", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",

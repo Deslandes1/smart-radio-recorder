@@ -23,6 +23,8 @@ if "converted_mp3_path" not in st.session_state:
     st.session_state.converted_mp3_path = None
 if "converted_mp3_report" not in st.session_state:
     st.session_state.converted_mp3_report = None
+if "example_url" not in st.session_state:
+    st.session_state.example_url = ""
 
 def show_haitian_flag():
     flag_path = "haiti_flag.png"
@@ -211,9 +213,8 @@ def save_report_file(report_text, prefix):
     return filename
 
 def convert_url_to_mp3(url):
-    """Download audio from any URL (video, live stream, radio) using yt-dlp."""
+    """Download audio from any URL using yt-dlp with better headers."""
     try:
-        # Create a safe output template
         output_template = "converted_audio_%(title)s.%(ext)s"
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -225,10 +226,17 @@ def convert_url_to_mp3(url):
             'outtmpl': output_template,
             'quiet': True,
             'no_warnings': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'referer': url,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-us,en;q=0.5',
+                'Sec-Fetch-Mode': 'navigate',
+            }
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            # Find the produced mp3 file
             mp3_files = [f for f in os.listdir('.') if f.startswith('converted_audio') and f.endswith('.mp3')]
             if mp3_files:
                 newest = max(mp3_files, key=os.path.getctime)
@@ -279,24 +287,22 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 
 # ------------------------------
-# MAIN TABS (4 tabs)
+# MAIN TABS
 # ------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab"), get_text("convert_tab")])
 
-# ========= TAB 1: MY AUDIO (uploaded + converted MP3) =========
+# TAB 1: MY AUDIO
 with tab1:
     st.markdown(f"### {get_text('my_audio')}")
-    # Upload audio
     uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])
     if uploaded_file:
         st.audio(uploaded_file)
-    # Show converted MP3 if exists
     if st.session_state.converted_mp3_path and os.path.exists(st.session_state.converted_mp3_path):
         st.markdown("---")
         st.markdown(f"### {get_text('converted_player')}")
         st.audio(st.session_state.converted_mp3_path)
 
-# ========= TAB 2: RECORDING & ANALYSIS =========
+# TAB 2: RECORDING & ANALYSIS
 with tab2:
     # Voice
     st.markdown(f"## {get_text('voice_rec_title')}")
@@ -376,7 +382,7 @@ with tab2:
         else:
             st.info(get_text("no_recording"))
 
-# ========= TAB 3: DOWNLOAD REPORT =========
+# TAB 3: DOWNLOAD REPORT
 with tab3:
     st.markdown("### 📥 Download Report")
     report_choice = st.radio("Choose:", ["Voice Report", "Video Report", "Converted MP3 Report"])
@@ -395,11 +401,25 @@ with tab3:
     else:
         st.info("No report yet. Record/convert and analyze first.")
 
-# ========= TAB 4: URL → MP3 CONVERTER =========
+# TAB 4: URL → MP3 CONVERTER (with test URLs)
 with tab4:
     st.markdown("## 🎬 Convert any URL (video, live stream, radio) to MP3")
     st.caption("Supports YouTube, Vimeo, Facebook, Twitter, TikTok, direct video URLs, live streams, icecast radio, etc.")
-    video_url = st.text_input(get_text("video_url"), placeholder="https://www.youtube.com/watch?v=... or http://radio.stream/live")
+    
+    example_urls = {
+        "YouTube Music (test)": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "Radio France Inter (MP3 stream)": "http://icecast.radiofrance.fr/franceinter-midfi.mp3",
+        "BBC World Service": "http://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
+    }
+    selected_example = st.selectbox("Try one of these working URLs:", list(example_urls.keys()))
+    if st.button("Use this example URL"):
+        video_url = example_urls[selected_example]
+        st.session_state.example_url = video_url
+        st.rerun()
+    
+    default_url = st.session_state.get("example_url", "")
+    video_url = st.text_input(get_text("video_url"), value=default_url, placeholder="https://www.youtube.com/watch?v=... or http://radio.stream/live")
+    
     if st.button(get_text("convert_btn")):
         if video_url:
             with st.spinner(get_text("converting")):
@@ -410,10 +430,10 @@ with tab4:
                     st.audio(mp3_file)
                 else:
                     st.error(get_text("conversion_error"))
+                    st.info("If the URL is a live radio stream, try extracting the direct .mp3/.aac link from the station's website. For YouTube, the converter works fine.")
         else:
             st.warning("Please enter a URL.")
     
-    # Display converted MP3 if available
     if st.session_state.converted_mp3_path and os.path.exists(st.session_state.converted_mp3_path):
         st.markdown(f"### {get_text('converted_player')}")
         st.audio(st.session_state.converted_mp3_path)

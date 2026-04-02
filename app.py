@@ -4,7 +4,7 @@ import av
 import datetime
 import os
 import random
-import tempfile
+from PIL import Image
 
 # ------------------------------
 # PAGE CONFIG & LOGIN
@@ -15,121 +15,96 @@ st.set_page_config(page_title="GlobalInternet.py Radio", layout="wide")
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
+def show_haitian_flag():
+    """Display the Haitian flag (blue and red with coat of arms)."""
+    # Try to load local image first
+    flag_path = "haiti_flag.png"
+    if os.path.exists(flag_path):
+        flag_img = Image.open(flag_path)
+        st.image(flag_img, width=150)
+    else:
+        # Fallback: emoji + colored boxes
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center;">
+                <div style="background-color: #00209F; width: 60px; height: 40px;"></div>
+                <div style="background-color: #DE2119; width: 60px; height: 40px;"></div>
+                <span style="font-size: 30px; margin-left: 10px;">🇭🇹</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.caption("Haitian Flag (blue & red with coat of arms)")
+
+# Login page
 if not st.session_state.authenticated:
     st.title("🔐 Login Required")
-    # Haitian Flag (Emoji + text)
-    st.markdown("## 🇭🇹 **GlobalInternet.py** 🇭🇹")
-    password_input = st.text_input("Enter password to access the radio suite", type="password")
-    if st.button("Login"):
-        if password_input == "20082010":
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("Incorrect password. Access denied.")
-    st.stop()  # Stop execution if not authenticated
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        show_haitian_flag()
+        st.markdown("## **GlobalInternet.py**")
+        password_input = st.text_input("Enter password to access the radio suite", type="password")
+        if st.button("Login"):
+            if password_input == "20082010":
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password. Access denied.")
+    st.stop()
 
 # ------------------------------
-# MULTI-LANGUAGE DICTIONARIES
+# AFTER LOGIN: SHOW FLAG AGAIN + SIDEBAR
 # ------------------------------
-LANGUAGES = {
-    "English": "en",
-    "Español": "es",
-    "Français": "fr"
-}
-
+# Multi-language dictionaries (same as before, but I'll keep them compact)
+LANGUAGES = {"English": "en", "Español": "es", "Français": "fr"}
 TEXTS = {
     "en": {
         "welcome": "Welcome to GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Live Radio",
-        "record_tab": "🎙️ Record & Analyze",
-        "report_tab": "📄 Download Report",
-        "language": "Language",
-        "price_label": "💰 Software Price (One-time)",
-        "price_value": "**$149 USD** (lifetime license, includes all updates)",
-        "user_info": "👤 Founder & Developer",
-        "user_name": "Gesner Deslandes",
-        "user_company": "GlobalInternet.py",
-        "user_phone": "(509) 4738-5663",
-        "user_email": "deslandes78@gmail.com",
-        "radio_url": "Internet Radio Stream URL",
-        "radio_placeholder": "http://example.com/stream.mp3",
-        "play_radio": "▶️ Play",
-        "upload_audio": "Or upload audio file for offline listening",
-        "voice_rec_title": "🎤 Voice Recording",
-        "video_rec_title": "📹 Video Recording",
-        "start_recording": "Start Recording",
-        "stop_recording": "Stop Recording",
-        "analyze": "📊 Analyze Recording",
-        "download_report": "⬇️ Download Report",
-        "no_recording": "No recording available. Record first.",
-        "report_generated": "Report generated!",
-        "analysis_result": "Analysis Result (simulated AI)",
-        "recording_info": "Recording Information",
-        "duration_sec": "Duration (seconds)",
-        "file_size_kb": "File size (KB)",
-        "mock_analysis": "Mock analysis: Speech clarity 85%, Background noise low, Sentiment: neutral/positive."
+        "radio_tab": "📡 Live Radio", "record_tab": "🎙️ Record & Analyze", "report_tab": "📄 Download Report",
+        "language": "Language", "price_label": "💰 Price (One-time)", "price_value": "**$149 USD** (lifetime license)",
+        "user_info": "👤 Founder & Developer", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
+        "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
+        "license": "© 2025 GlobalInternet.py – All Rights Reserved",
+        "radio_url": "Internet Radio Stream URL", "radio_placeholder": "http://example.com/stream.mp3",
+        "play_radio": "▶️ Play", "upload_audio": "Or upload audio file",
+        "voice_rec_title": "🎤 Voice Recording", "video_rec_title": "📹 Video Recording",
+        "start_recording": "Start", "stop_recording": "Stop", "analyze": "📊 Analyze",
+        "download_report": "⬇️ Download Report", "no_recording": "No recording yet.",
+        "report_generated": "Report generated!", "analysis_result": "Analysis Result (simulated)",
+        "recording_info": "Recording Info", "duration_sec": "Duration (s)", "file_size_kb": "Size (KB)",
+        "mock_analysis": "Speech clarity 85%, low noise, sentiment positive."
     },
     "es": {
         "welcome": "Bienvenido a GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Radio en Vivo",
-        "record_tab": "🎙️ Grabar y Analizar",
-        "report_tab": "📄 Descargar Informe",
-        "language": "Idioma",
-        "price_label": "💰 Precio del Software (único pago)",
-        "price_value": "**149 USD** (licencia vitalicia, incluye actualizaciones)",
-        "user_info": "👤 Fundador y Desarrollador",
-        "user_name": "Gesner Deslandes",
-        "user_company": "GlobalInternet.py",
-        "user_phone": "(509) 4738-5663",
-        "user_email": "deslandes78@gmail.com",
-        "radio_url": "URL de la emisora",
-        "radio_placeholder": "http://ejemplo.com/stream.mp3",
-        "play_radio": "▶️ Reproducir",
-        "upload_audio": "O sube un archivo de audio para escuchar sin conexión",
-        "voice_rec_title": "🎤 Grabación de Voz",
-        "video_rec_title": "📹 Grabación de Vídeo",
-        "start_recording": "Iniciar Grabación",
-        "stop_recording": "Detener Grabación",
-        "analyze": "📊 Analizar Grabación",
-        "download_report": "⬇️ Descargar Informe",
-        "no_recording": "No hay grabación. Graba primero.",
-        "report_generated": "¡Informe generado!",
-        "analysis_result": "Resultado del Análisis (IA simulada)",
-        "recording_info": "Información de la Grabación",
-        "duration_sec": "Duración (segundos)",
-        "file_size_kb": "Tamaño (KB)",
-        "mock_analysis": "Análisis simulado: Claridad del habla 85%, Ruido bajo, Sentimiento: neutral/positivo."
+        "radio_tab": "📡 Radio en Vivo", "record_tab": "🎙️ Grabar y Analizar", "report_tab": "📄 Descargar Informe",
+        "language": "Idioma", "price_label": "💰 Precio (único pago)", "price_value": "**149 USD** (licencia vitalicia)",
+        "user_info": "👤 Fundador", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
+        "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
+        "license": "© 2025 GlobalInternet.py – Todos los derechos reservados",
+        "radio_url": "URL de la emisora", "radio_placeholder": "http://ejemplo.com/stream.mp3",
+        "play_radio": "▶️ Reproducir", "upload_audio": "O sube archivo",
+        "voice_rec_title": "🎤 Grabación de Voz", "video_rec_title": "📹 Grabación de Vídeo",
+        "start_recording": "Iniciar", "stop_recording": "Detener", "analyze": "📊 Analizar",
+        "download_report": "⬇️ Descargar Informe", "no_recording": "Sin grabación.",
+        "report_generated": "¡Informe generado!", "analysis_result": "Resultado (simulado)",
+        "recording_info": "Información", "duration_sec": "Duración (s)", "file_size_kb": "Tamaño (KB)",
+        "mock_analysis": "Claridad 85%, ruido bajo, sentimiento positivo."
     },
     "fr": {
         "welcome": "Bienvenue sur GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Radio en Direct",
-        "record_tab": "🎙️ Enregistrer et Analyser",
-        "report_tab": "📄 Télécharger Rapport",
-        "language": "Langue",
-        "price_label": "💰 Prix du Logiciel (unique)",
-        "price_value": "**149 USD** (licence à vie, mises à jour incluses)",
-        "user_info": "👤 Fondateur & Développeur",
-        "user_name": "Gesner Deslandes",
-        "user_company": "GlobalInternet.py",
-        "user_phone": "(509) 4738-5663",
-        "user_email": "deslandes78@gmail.com",
-        "radio_url": "URL du flux radio",
-        "radio_placeholder": "http://exemple.com/stream.mp3",
-        "play_radio": "▶️ Lire",
-        "upload_audio": "Ou téléchargez un fichier audio pour écoute hors ligne",
-        "voice_rec_title": "🎤 Enregistrement Vocal",
-        "video_rec_title": "📹 Enregistrement Vidéo",
-        "start_recording": "Démarrer l'enregistrement",
-        "stop_recording": "Arrêter l'enregistrement",
-        "analyze": "📊 Analyser l'enregistrement",
-        "download_report": "⬇️ Télécharger Rapport",
-        "no_recording": "Aucun enregistrement disponible. Enregistrez d'abord.",
-        "report_generated": "Rapport généré !",
-        "analysis_result": "Résultat de l'analyse (IA simulée)",
-        "recording_info": "Informations d'enregistrement",
-        "duration_sec": "Durée (secondes)",
-        "file_size_kb": "Taille (Ko)",
-        "mock_analysis": "Analyse simulée : Clarté de la parole 85%, Bruit faible, Sentiment : neutre/positif."
+        "radio_tab": "📡 Radio en Direct", "record_tab": "🎙️ Enregistrer et Analyser", "report_tab": "📄 Télécharger Rapport",
+        "language": "Langue", "price_label": "💰 Prix (unique)", "price_value": "**149 USD** (licence à vie)",
+        "user_info": "👤 Fondateur", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
+        "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
+        "license": "© 2025 GlobalInternet.py – Tous droits réservés",
+        "radio_url": "URL du flux", "radio_placeholder": "http://exemple.com/stream.mp3",
+        "play_radio": "▶️ Lire", "upload_audio": "Ou téléchargez",
+        "voice_rec_title": "🎤 Enregistrement vocal", "video_rec_title": "📹 Enregistrement vidéo",
+        "start_recording": "Démarrer", "stop_recording": "Arrêter", "analyze": "📊 Analyser",
+        "download_report": "⬇️ Télécharger", "no_recording": "Aucun enregistrement.",
+        "report_generated": "Rapport généré !", "analysis_result": "Résultat (simulé)",
+        "recording_info": "Infos", "duration_sec": "Durée (s)", "file_size_kb": "Taille (Ko)",
+        "mock_analysis": "Clarté 85%, bruit faible, sentiment positif."
     }
 }
 
@@ -137,33 +112,24 @@ def get_text(key):
     lang_code = st.session_state.get("language", "en")
     return TEXTS[lang_code].get(key, key)
 
-# ------------------------------
-# HELPER FUNCTIONS FOR REPORT
-# ------------------------------
 def generate_mock_report(file_path, rec_type):
     if not file_path or not os.path.exists(file_path):
         return None
     file_size_kb = os.path.getsize(file_path) / 1024
-    mod_time = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-    # Mock duration (in real app you would extract from media file)
     duration_sec = random.randint(2, 45)
     report = f"""
 {'='*50}
 {get_text('report_generated').upper()}
 {'='*50}
-
 {get_text('recording_info')}:
 - Type: {rec_type}
 - File: {os.path.basename(file_path)}
 - {get_text('file_size_kb')}: {file_size_kb:.2f} KB
 - {get_text('duration_sec')}: {duration_sec} s
-- Timestamp: {mod_time.strftime('%Y-%m-%d %H:%M:%S')}
+- Timestamp: {datetime.datetime.now()}
 
 {get_text('analysis_result')}:
 {get_text('mock_analysis')}
-- Keywords detected: radio, software, analysis
-- Recommendation: Good quality for further processing.
-
 {'='*50}
 """
     return report
@@ -178,9 +144,11 @@ def save_report_file(report_text, prefix):
     return filename
 
 # ------------------------------
-# SIDEBAR: LANGUAGE, USER INFO, PRICE, FLAG
+# SIDEBAR (after login)
 # ------------------------------
 st.sidebar.markdown("# 🇭🇹 GlobalInternet.py 🇭🇹")
+# Show the real flag again in sidebar
+show_haitian_flag()
 st.sidebar.markdown(f"### {get_text('welcome')}")
 
 # Language selection
@@ -200,17 +168,21 @@ st.sidebar.info(f"""
 st.sidebar.markdown(f"## {get_text('price_label')}")
 st.sidebar.success(get_text("price_value"))
 
-# Haitian Flag always visible
+# License and rights
 st.sidebar.markdown("---")
-st.sidebar.markdown("## 🇭🇹🇭🇹🇭🇹")
-st.sidebar.caption("Proudly Haitian-made software")
+st.sidebar.markdown(f"### {get_text('license')}")
+st.sidebar.caption("This software is protected by copyright law. Unauthorized distribution or reproduction is prohibited.")
+
+# Haitian flag reminder
+st.sidebar.markdown("---")
+st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 
 # ------------------------------
-# MAIN TABS
+# MAIN APP TABS (same functional logic as before)
 # ------------------------------
 tab1, tab2, tab3 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab")])
 
-# ========= TAB 1: RADIO =========
+# TAB 1: RADIO
 with tab1:
     col1, col2 = st.columns([3,1])
     with col1:
@@ -223,45 +195,31 @@ with tab1:
         if uploaded_file:
             st.audio(uploaded_file)
 
-# ========= TAB 2: RECORDING & ANALYSIS =========
+# TAB 2: RECORDING & ANALYSIS
 with tab2:
-    # We'll use webrtc_streamer with in-memory recording.
-    # To avoid the previous error, we create two separate streamers for voice and video.
-    # They will only be active when the user clicks the respective start button.
-    
-    # --- Voice Recording ---
+    # Voice
     st.markdown(f"## {get_text('voice_rec_title')}")
-    voice_key = "voice_recorder"
     voice_file = "voice_output.wav"
-    
-    voice_start = st.button(f"🎙️ {get_text('start_recording')}", key="voice_start")
-    voice_stop = st.button(f"⏹️ {get_text('stop_recording')}", key="voice_stop")
-    
-    if voice_start:
-        st.session_state.voice_active = True
-    if voice_stop:
-        st.session_state.voice_active = False
+    col_v1, col_v2 = st.columns(2)
+    with col_v1:
+        if st.button(f"🎙️ {get_text('start_recording')}", key="voice_start"):
+            st.session_state.voice_active = True
+    with col_v2:
+        if st.button(f"⏹️ {get_text('stop_recording')}", key="voice_stop"):
+            st.session_state.voice_active = False
     
     if st.session_state.get("voice_active", False):
-        st.info("🔴 Recording voice... Click 'Stop Recording' when done.")
-        ctx_voice = webrtc_streamer(
-            key=voice_key,
-            mode=WebRtcMode.SENDRECV,
-            audio_receiver_size=1024,
-            media_stream_constraints={"audio": True, "video": False},
-            out_recorder_filename=voice_file
-        )
-        if ctx_voice and ctx_voice.audio_receiver:
-            # keep the component alive
-            pass
+        st.info("🔴 Recording voice...")
+        webrtc_streamer(key="voice", mode=WebRtcMode.SENDRECV, audio_receiver_size=1024,
+                        media_stream_constraints={"audio": True, "video": False},
+                        out_recorder_filename=voice_file)
     else:
-        # When not active, just show placeholder
-        webrtc_streamer(key=voice_key + "_idle", desired_playing_state=False)
+        webrtc_streamer(key="voice_idle", desired_playing_state=False)
     
     if os.path.exists(voice_file):
         st.audio(voice_file)
         if st.button(get_text("analyze"), key="analyze_voice"):
-            report = generate_mock_report(voice_file, "Voice Recording")
+            report = generate_mock_report(voice_file, "Voice")
             if report:
                 st.session_state["voice_report"] = report
                 st.success(get_text("report_generated"))
@@ -271,35 +229,29 @@ with tab2:
     
     st.divider()
     
-    # --- Video Recording ---
+    # Video
     st.markdown(f"## {get_text('video_rec_title')}")
-    video_key = "video_recorder"
     video_file = "video_output.mp4"
-    
-    video_start = st.button(f"📹 {get_text('start_recording')}", key="video_start")
-    video_stop = st.button(f"⏹️ {get_text('stop_recording')}", key="video_stop")
-    
-    if video_start:
-        st.session_state.video_active = True
-    if video_stop:
-        st.session_state.video_active = False
+    col_vid1, col_vid2 = st.columns(2)
+    with col_vid1:
+        if st.button(f"📹 {get_text('start_recording')}", key="video_start"):
+            st.session_state.video_active = True
+    with col_vid2:
+        if st.button(f"⏹️ {get_text('stop_recording')}", key="video_stop"):
+            st.session_state.video_active = False
     
     if st.session_state.get("video_active", False):
-        st.info("🔴 Recording video + audio... Click 'Stop Recording' when done.")
-        ctx_video = webrtc_streamer(
-            key=video_key,
-            mode=WebRtcMode.SENDRECV,
-            audio_receiver_size=1024,
-            media_stream_constraints={"audio": True, "video": True},
-            out_recorder_filename=video_file
-        )
+        st.info("🔴 Recording video...")
+        webrtc_streamer(key="video", mode=WebRtcMode.SENDRECV, audio_receiver_size=1024,
+                        media_stream_constraints={"audio": True, "video": True},
+                        out_recorder_filename=video_file)
     else:
-        webrtc_streamer(key=video_key + "_idle", desired_playing_state=False)
+        webrtc_streamer(key="video_idle", desired_playing_state=False)
     
     if os.path.exists(video_file):
         st.video(video_file)
         if st.button(get_text("analyze"), key="analyze_video"):
-            report = generate_mock_report(video_file, "Video Recording")
+            report = generate_mock_report(video_file, "Video")
             if report:
                 st.session_state["video_report"] = report
                 st.success(get_text("report_generated"))
@@ -307,25 +259,16 @@ with tab2:
     else:
         st.info(get_text("no_recording"))
 
-# ========= TAB 3: REPORT DOWNLOAD =========
+# TAB 3: REPORT DOWNLOAD
 with tab3:
-    st.markdown("### 📥 Download Analysis Report")
-    report_choice = st.radio("Choose report:", ["Voice Report", "Video Report"])
-    if report_choice == "Voice Report":
-        report_content = st.session_state.get("voice_report", "")
+    st.markdown("### 📥 Download Report")
+    report_choice = st.radio("Choose:", ["Voice Report", "Video Report"])
+    content = st.session_state.get("voice_report" if "Voice" in report_choice else "video_report", "")
+    if content:
+        fname = save_report_file(content, report_choice.replace(" ", "_").lower())
+        if fname:
+            with open(fname, "r") as f:
+                st.download_button(get_text("download_report"), f.read(), file_name=fname, mime="text/plain")
+            os.remove(fname)
     else:
-        report_content = st.session_state.get("video_report", "")
-    
-    if report_content:
-        filename = save_report_file(report_content, report_choice.replace(" ", "_").lower())
-        if filename:
-            with open(filename, "r", encoding="utf-8") as f:
-                st.download_button(
-                    label=get_text("download_report"),
-                    data=f.read(),
-                    file_name=filename,
-                    mime="text/plain"
-                )
-            os.remove(filename)
-    else:
-        st.info("No report yet. Please record and analyze in the 'Record & Analyze' tab.")
+        st.info("No report yet. Record and analyze first.")

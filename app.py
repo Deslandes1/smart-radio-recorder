@@ -1,6 +1,5 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
-import av
+from streamlit_webrtc import webrtc_streamer
 import datetime
 import os
 import random
@@ -215,21 +214,28 @@ st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 # ------------------------------
 tab1, tab2, tab3 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab")])
 
-# TAB 1: RADIO
+# ========= TAB 1: RADIO with working HTML5 player =========
 with tab1:
     col1, col2 = st.columns([3,1])
     with col1:
         radio_url = st.text_input(get_text("radio_url"), placeholder=get_text("radio_placeholder"))
         if radio_url:
-            # Use st.audio with controls (it has built-in play/pause)
-            st.audio(radio_url, format="audio/mpeg")
+            # HTML5 audio element – works with most streaming URLs
+            audio_html = f"""
+            <audio controls autoplay style="width: 100%;">
+                <source src="{radio_url}" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            """
+            st.components.v1.html(audio_html, height=100)
+            st.caption("ℹ️ If the stream doesn't play, try a direct MP3 URL or use a radio aggregator link that ends with .mp3/.ogg")
     with col2:
         st.markdown("### 🎧 Offline")
         uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])
         if uploaded_file:
             st.audio(uploaded_file)
 
-# TAB 2: RECORDING (FIXED - no deprecated args)
+# ========= TAB 2: RECORDING & ANALYSIS =========
 with tab2:
     # Voice
     st.markdown(f"## {get_text('voice_rec_title')}")
@@ -253,14 +259,12 @@ with tab2:
         
         if st.session_state.voice_active:
             st.info("🔴 Recording voice... Click 'Stop Recording' when done.")
-            # Correct usage: no mode parameter, just key and out_recorder_filename
             webrtc_streamer(
                 key="voice",
                 media_stream_constraints={"audio": True, "video": False},
                 out_recorder_filename=voice_file
             )
         else:
-            # Placeholder to avoid reinitialization
             webrtc_streamer(key="voice_idle", desired_playing_state=False)
         
         if os.path.exists(voice_file):
@@ -317,7 +321,7 @@ with tab2:
         else:
             st.info(get_text("no_recording"))
 
-# TAB 3: REPORT DOWNLOAD
+# ========= TAB 3: REPORT DOWNLOAD =========
 with tab3:
     st.markdown("### 📥 Download Report")
     report_choice = st.radio("Choose:", ["Voice Report", "Video Report"])

@@ -23,10 +23,12 @@ if "converted_mp3_path" not in st.session_state:
     st.session_state.converted_mp3_path = None
 if "converted_mp3_report" not in st.session_state:
     st.session_state.converted_mp3_report = None
+if "converted_video_path" not in st.session_state:
+    st.session_state.converted_video_path = None
 if "example_url" not in st.session_state:
     st.session_state.example_url = ""
 if "last_video_url" not in st.session_state:
-    st.session_state.last_video_url = ""  # store URL to show video player
+    st.session_state.last_video_url = ""
 
 def show_haitian_flag():
     flag_path = "haiti_flag.png"
@@ -75,7 +77,7 @@ LANGUAGES = {
 TEXTS = {
     "en": {
         "welcome": "Welcome to GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 My Audio", "record_tab": "🎙️ Record & Analyze", "report_tab": "📄 Download Report", "convert_tab": "🎬 URL → MP3",
+        "radio_tab": "📡 My Audio", "record_tab": "🎙️ Record & Analyze", "report_tab": "📄 Download Report", "convert_tab": "🎬 URL → MP3 & MP4",
         "language": "Language", "price_label": "💰 Price (One-time)", "price_value": "**$149 USD** (lifetime license)",
         "user_info": "👤 Founder & Developer", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
@@ -97,12 +99,14 @@ TEXTS = {
         "no_converted": "No MP3 converted yet. Use the converter above.",
         "converted_player": "🎵 Converted MP3 Player",
         "original_video": "🎬 Original Video Player",
+        "download_video": "⬇️ Download Video (MP4)",
+        "video_download_success": "Video downloaded successfully! Click below to save to your device.",
         "analyze_btn": "Generate Report from this MP3",
         "my_audio": "🎧 Your uploaded and converted audio"
     },
     "es": {
         "welcome": "Bienvenido a GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Mi Audio", "record_tab": "🎙️ Grabar y Analizar", "report_tab": "📄 Descargar Informe", "convert_tab": "🎬 URL → MP3",
+        "radio_tab": "📡 Mi Audio", "record_tab": "🎙️ Grabar y Analizar", "report_tab": "📄 Descargar Informe", "convert_tab": "🎬 URL → MP3 y MP4",
         "language": "Idioma", "price_label": "💰 Precio (único pago)", "price_value": "**149 USD** (licencia vitalicia)",
         "user_info": "👤 Fundador", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
@@ -124,12 +128,14 @@ TEXTS = {
         "no_converted": "No se ha convertido ningún MP3. Use el convertidor arriba.",
         "converted_player": "🎵 Reproductor de MP3 convertido",
         "original_video": "🎬 Reproductor de video original",
+        "download_video": "⬇️ Descargar Video (MP4)",
+        "video_download_success": "¡Video descargado exitosamente! Haga clic abajo para guardar en su dispositivo.",
         "analyze_btn": "Generar informe desde este MP3",
         "my_audio": "🎧 Tu audio subido y convertido"
     },
     "fr": {
         "welcome": "Bienvenue sur GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Mon Audio", "record_tab": "🎙️ Enregistrer et Analyser", "report_tab": "📄 Télécharger Rapport", "convert_tab": "🎬 URL → MP3",
+        "radio_tab": "📡 Mon Audio", "record_tab": "🎙️ Enregistrer et Analyser", "report_tab": "📄 Télécharger Rapport", "convert_tab": "🎬 URL → MP3 & MP4",
         "language": "Langue", "price_label": "💰 Prix (unique)", "price_value": "**149 USD** (licence à vie)",
         "user_info": "👤 Fondateur", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
@@ -151,12 +157,14 @@ TEXTS = {
         "no_converted": "Aucun MP3 converti. Utilisez le convertisseur ci-dessus.",
         "converted_player": "🎵 Lecteur MP3 converti",
         "original_video": "🎬 Lecteur vidéo original",
+        "download_video": "⬇️ Télécharger la vidéo (MP4)",
+        "video_download_success": "Vidéo téléchargée avec succès ! Cliquez ci-dessous pour l'enregistrer sur votre appareil.",
         "analyze_btn": "Générer un rapport à partir de ce MP3",
         "my_audio": "🎧 Votre audio téléchargé et converti"
     },
     "ht": {
         "welcome": "Byenveni nan GlobalInternet.py Radio Suite",
-        "radio_tab": "📡 Odyo Mwen", "record_tab": "🎙️ Anrejistre ak Analize", "report_tab": "📄 Telechaje Rapò", "convert_tab": "🎬 URL → MP3",
+        "radio_tab": "📡 Odyo Mwen", "record_tab": "🎙️ Anrejistre ak Analize", "report_tab": "📄 Telechaje Rapò", "convert_tab": "🎬 URL → MP3 ak MP4",
         "language": "Lang", "price_label": "💰 Pri (yon sèl fwa)", "price_value": "**149 USD** (lisans pou tout lavi)",
         "user_info": "👤 Fondatè ak Devlopè", "user_name": "Gesner Deslandes", "user_company": "GlobalInternet.py",
         "user_phone": "(509) 4738-5663", "user_email": "deslandes78@gmail.com",
@@ -178,6 +186,8 @@ TEXTS = {
         "no_converted": "Pa gen MP3 konvèti. Sèvi ak konvètisè pi wo a.",
         "converted_player": "🎵 Lektè MP3 konvèti",
         "original_video": "🎬 Lektè videyo orijinal",
+        "download_video": "⬇️ Telechaje Videyo (MP4)",
+        "video_download_success": "Videyo telechaje avèk siksè! Klike anba a pou sove sou aparèy ou.",
         "analyze_btn": "Kreye rapò apati MP3 sa a",
         "my_audio": "🎧 Odyo ou telechaje ak konvèti"
     }
@@ -223,6 +233,12 @@ def find_converted_mp3():
     mp3_files = [f for f in os.listdir('.') if f.startswith('converted_audio') and f.endswith('.mp3')]
     if mp3_files:
         return max(mp3_files, key=os.path.getctime)
+    return None
+
+def find_converted_video():
+    video_files = [f for f in os.listdir('.') if f.startswith('converted_video') and (f.endswith('.mp4') or f.endswith('.webm'))]
+    if video_files:
+        return max(video_files, key=os.path.getctime)
     return None
 
 def try_strategy_1(url):
@@ -305,6 +321,29 @@ def convert_url_to_mp3(url):
             st.warning(f"⚠️ {strategy_name} failed: {str(e)[:100]}")
             continue
     return None
+
+def download_video(url):
+    """Download the best video (MP4) from the URL."""
+    try:
+        ydl_opts = {
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'outtmpl': 'converted_video_%(title)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            }
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.extract_info(url, download=True)
+        video_files = [f for f in os.listdir('.') if f.startswith('converted_video') and (f.endswith('.mp4') or f.endswith('.webm'))]
+        if video_files:
+            return max(video_files, key=os.path.getctime)
+        return None
+    except Exception as e:
+        st.error(f"Video download error: {str(e)}")
+        return None
 
 # ------------------------------
 # SIDEBAR
@@ -461,9 +500,9 @@ with tab3:
     else:
         st.info("No report yet. Record/convert and analyze first.")
 
-# ========= TAB 4: URL → MP3 CONVERTER + ORIGINAL VIDEO PLAYER =========
+# ========= TAB 4: URL → MP3 + MP4 =========
 with tab4:
-    st.markdown("## 🎬 Convert any URL (video, live stream, radio) to MP3")
+    st.markdown("## 🎬 Convert any URL to MP3 (audio) and download MP4 (video)")
     st.caption("Supports YouTube, Vimeo, Facebook, Twitter, TikTok, direct video URLs, live streams, icecast radio, etc.")
     
     example_urls = {
@@ -486,7 +525,7 @@ with tab4:
                 mp3_file = convert_url_to_mp3(video_url)
                 if mp3_file and os.path.exists(mp3_file):
                     st.session_state.converted_mp3_path = mp3_file
-                    st.session_state.last_video_url = video_url  # store for video player
+                    st.session_state.last_video_url = video_url
                     st.success(get_text("conversion_success"))
                     st.audio(mp3_file)
                 else:
@@ -506,11 +545,26 @@ with tab4:
                 st.success(get_text("report_generated"))
                 st.text_area("Preview", report, height=200)
         
-        # NEW: Play the original video if the URL is a video platform (YouTube, Vimeo, etc.)
+        # Download video button (if URL is a video platform)
         if st.session_state.last_video_url:
             st.markdown("---")
             st.markdown(f"### {get_text('original_video')}")
-            # Use st.video which supports YouTube, Vimeo, and direct MP4 links
             st.video(st.session_state.last_video_url)
+            
+            if st.button(get_text("download_video"), key="download_vid"):
+                with st.spinner("Downloading video file..."):
+                    video_file = download_video(st.session_state.last_video_url)
+                    if video_file and os.path.exists(video_file):
+                        st.session_state.converted_video_path = video_file
+                        st.success(get_text("video_download_success"))
+                        with open(video_file, "rb") as f:
+                            st.download_button(
+                                label="💾 Save Video (MP4)",
+                                data=f,
+                                file_name=video_file,
+                                mime="video/mp4"
+                            )
+                    else:
+                        st.error("Could not download video. The URL might not support video download (e.g., live radio stream).")
     else:
         st.info(get_text("no_converted"))

@@ -5,18 +5,20 @@ import datetime
 import os
 import random
 from PIL import Image
-import time
 
 # ------------------------------
 # PAGE CONFIG & LOGIN
 # ------------------------------
 st.set_page_config(page_title="GlobalInternet.py Radio", layout="wide")
 
-# Password protection
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "demo_mode" not in st.session_state:
     st.session_state.demo_mode = False
+if "voice_active" not in st.session_state:
+    st.session_state.voice_active = False
+if "video_active" not in st.session_state:
+    st.session_state.video_active = False
 
 def show_haitian_flag():
     flag_path = "haiti_flag.png"
@@ -53,9 +55,8 @@ if not st.session_state.authenticated:
     st.stop()
 
 # ------------------------------
-# AFTER LOGIN
+# MULTI-LANGUAGE (4 languages)
 # ------------------------------
-# Languages: English, Spanish, French, Haitian Creole
 LANGUAGES = {
     "English": "en",
     "Español": "es",
@@ -115,7 +116,7 @@ TEXTS = {
         "mock_analysis": "Clarté 85%, bruit faible, sentiment positif.",
         "logout": "🚪 Déconnexion", "demo_mode": "🎮 Mode Démo (pas d'enregistrement réel)", "demo_active": "Mode démo actif – données simulées."
     },
-    "ht": {  # Haitian Creole
+    "ht": {
         "welcome": "Byenveni nan GlobalInternet.py Radio Suite",
         "radio_tab": "📡 Radyo Live", "record_tab": "🎙️ Anrejistre ak Analize", "report_tab": "📄 Telechaje Rapò",
         "language": "Lang", "price_label": "💰 Pri (yon sèl fwa)", "price_value": "**149 USD** (lisans pou tout lavi)",
@@ -139,10 +140,10 @@ def get_text(key):
     return TEXTS[lang_code].get(key, key)
 
 def generate_mock_report(file_path, rec_type):
-    if not st.session_state.demo_mode and (not file_path or not os.path.exists(file_path)):
-        return None
-    # In demo mode, simulate a file
-    file_size_kb = random.randint(50, 500) if st.session_state.demo_mode else os.path.getsize(file_path)/1024
+    if not st.session_state.demo_mode and file_path and os.path.exists(file_path):
+        file_size_kb = os.path.getsize(file_path) / 1024
+    else:
+        file_size_kb = random.randint(50, 500)
     duration_sec = random.randint(3, 30)
     report = f"""
 {'='*50}
@@ -170,17 +171,15 @@ def save_report_file(report_text, prefix):
     return filename
 
 # ------------------------------
-# SIDEBAR (after login)
+# SIDEBAR
 # ------------------------------
 st.sidebar.markdown("# 🇭🇹 GlobalInternet.py 🇭🇹")
 show_haitian_flag()
 st.sidebar.markdown(f"### {get_text('welcome')}")
 
-# Language selection
 lang = st.sidebar.selectbox(get_text("language"), list(LANGUAGES.keys()))
 st.session_state["language"] = LANGUAGES[lang]
 
-# Demo mode toggle
 demo_toggle = st.sidebar.checkbox(get_text("demo_mode"), value=st.session_state.demo_mode)
 if demo_toggle != st.session_state.demo_mode:
     st.session_state.demo_mode = demo_toggle
@@ -188,7 +187,6 @@ if demo_toggle != st.session_state.demo_mode:
 if st.session_state.demo_mode:
     st.sidebar.info(get_text("demo_active"))
 
-# Developer info
 st.sidebar.markdown(f"## {get_text('user_info')}")
 st.sidebar.info(f"""
 **{get_text('user_name')}**  
@@ -197,16 +195,13 @@ st.sidebar.info(f"""
 📧 {get_text('user_email')}
 """)
 
-# Price
 st.sidebar.markdown(f"## {get_text('price_label')}")
 st.sidebar.success(get_text("price_value"))
 
-# License and rights
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"### {get_text('license')}")
 st.sidebar.caption("This software is protected by copyright law. Unauthorized distribution or reproduction is prohibited.")
 
-# Logout button
 if st.sidebar.button(get_text("logout")):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
@@ -216,42 +211,25 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("## 🇭🇹 Fièrement fait en Haïti")
 
 # ------------------------------
-# MAIN APP TABS
+# MAIN TABS
 # ------------------------------
 tab1, tab2, tab3 = st.tabs([get_text("radio_tab"), get_text("record_tab"), get_text("report_tab")])
 
-# TAB 1: RADIO with pause button
+# TAB 1: RADIO
 with tab1:
     col1, col2 = st.columns([3,1])
     with col1:
         radio_url = st.text_input(get_text("radio_url"), placeholder=get_text("radio_placeholder"))
         if radio_url:
-            # Custom HTML5 audio with play/pause button
-            audio_html = f"""
-            <audio id="radioPlayer" src="{radio_url}" controls style="width: 100%;"></audio>
-            <script>
-                var player = document.getElementById('radioPlayer');
-                function playRadio() {{ player.play(); }}
-                function pauseRadio() {{ player.pause(); }}
-            </script>
-            """
-            st.components.v1.html(audio_html, height=80)
-            col_play, col_pause = st.columns(2)
-            with col_play:
-                if st.button(get_text("play_radio"), key="play_btn"):
-                    st.components.v1.html("<script>playRadio();</script>", height=0)
-            with col_pause:
-                if st.button(get_text("pause_radio"), key="pause_btn"):
-                    st.components.v1.html("<script>pauseRadio();</script>", height=0)
-        else:
-            st.info("Enter a radio stream URL above.")
+            # Use st.audio with controls (it has built-in play/pause)
+            st.audio(radio_url, format="audio/mpeg")
     with col2:
         st.markdown("### 🎧 Offline")
         uploaded_file = st.file_uploader(get_text("upload_audio"), type=["mp3","wav","ogg"])
         if uploaded_file:
             st.audio(uploaded_file)
 
-# TAB 2: RECORDING & ANALYSIS (with demo mode integration)
+# TAB 2: RECORDING (FIXED - no deprecated args)
 with tab2:
     # Voice
     st.markdown(f"## {get_text('voice_rec_title')}")
@@ -273,12 +251,16 @@ with tab2:
             if st.button(f"⏹️ {get_text('stop_recording')}", key="voice_stop"):
                 st.session_state.voice_active = False
         
-        if st.session_state.get("voice_active", False):
-            st.info("🔴 Recording voice...")
-            webrtc_streamer(key="voice", mode=WebRtcMode.SENDRECV, audio_receiver_size=1024,
-                            media_stream_constraints={"audio": True, "video": False},
-                            out_recorder_filename=voice_file)
+        if st.session_state.voice_active:
+            st.info("🔴 Recording voice... Click 'Stop Recording' when done.")
+            # Correct usage: no mode parameter, just key and out_recorder_filename
+            webrtc_streamer(
+                key="voice",
+                media_stream_constraints={"audio": True, "video": False},
+                out_recorder_filename=voice_file
+            )
         else:
+            # Placeholder to avoid reinitialization
             webrtc_streamer(key="voice_idle", desired_playing_state=False)
         
         if os.path.exists(voice_file):
@@ -314,11 +296,13 @@ with tab2:
             if st.button(f"⏹️ {get_text('stop_recording')}", key="video_stop"):
                 st.session_state.video_active = False
         
-        if st.session_state.get("video_active", False):
-            st.info("🔴 Recording video...")
-            webrtc_streamer(key="video", mode=WebRtcMode.SENDRECV, audio_receiver_size=1024,
-                            media_stream_constraints={"audio": True, "video": True},
-                            out_recorder_filename=video_file)
+        if st.session_state.video_active:
+            st.info("🔴 Recording video + audio... Click 'Stop Recording' when done.")
+            webrtc_streamer(
+                key="video",
+                media_stream_constraints={"audio": True, "video": True},
+                out_recorder_filename=video_file
+            )
         else:
             webrtc_streamer(key="video_idle", desired_playing_state=False)
         
